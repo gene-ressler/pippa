@@ -31,7 +31,7 @@ Or install it yourself as:
     # Change default dark red fill to dark green.
     # Changes cause dots entered so far to be rendered to graphic.
     # Several other parameters also control dot appearance.
-    map.fill 'DarkGreen'
+    map.fill = 'DarkGreen'
 
     # Add a dot in the middle of the map using pixel coordinates.
     map.add_dot(map.width/2, map.height/2, 100)
