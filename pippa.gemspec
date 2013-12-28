@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["gene.ressler@gmail.com"]
   spec.description   = %q{Draw marks on maps by lat/lon or zip code.}
   spec.summary       = %q{Port of the plot-latlon utility from CAIDA (http://www.caida.org).}
-  spec.homepage      = "http://sourceforge.net/projects/pippa"
+  spec.homepage      = "https://github.com/gene-ressler/pippa/wiki"
   spec.license       = "GPLv3"
 
   spec.files         = `git ls-files`.split($/) +
