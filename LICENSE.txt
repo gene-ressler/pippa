@@ -1,4 +1,10 @@
-Copyright (c) 2013 Gene Ressler
+Pippa - a Ruby gem for producing simple map graphics overlain with
+geocoded dots of given area.
+
+All original portions copyright (c) 2013 Gene Ressler an subject to GPLv3.
+
+Included map backgrounds and map configuration file are licensed
+separately as described below.
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
@@ -620,57 +626,81 @@ an absolute waiver of all civil liability in connection with the
 Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
-                     END OF TERMS AND CONDITIONS
+-------------------------------------------------------------------------
 
-            How to Apply These Terms to Your New Programs
+The maps, map configuration file, and coordinate conversion functions
+(though not their code) were taken from the Perl package plot-latlong,
+which is a product of CAIDA. See
+http://www.caida.org/tools/visualization/plot-latlong/.
+The license text of that package is included below.
 
-  If you develop a new program, and you want it to be of the greatest
-possible use to the public, the best way to achieve this is to make it
-free software which everyone can redistribute and change under these terms.
-
-  To do so, attach the following notices to the program.  It is safest
-to attach them to the start of each source file to most effectively
-state the exclusion of warranty; and each file should have at least
-the "copyright" line and a pointer to where the full notice is found.
-
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-Also add information on how to contact you by electronic and paper mail.
-
-  If the program does terminal interaction, make it output a short
-notice like this when it starts in an interactive mode:
-
-    <program>  Copyright (C) <year>  <name of author>
-    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
-    This is free software, and you are welcome to redistribute it
-    under certain conditions; type `show c' for details.
-
-The hypothetical commands `show w' and `show c' should show the appropriate
-parts of the General Public License.  Of course, your program's commands
-might be different; for a GUI interface, you would use an "about box".
-
-  You should also get your employer (if you work as a programmer) or school,
-if any, to sign a "copyright disclaimer" for the program, if necessary.
-For more information on this, and how to apply and follow the GNU GPL, see
-<http://www.gnu.org/licenses/>.
-
-  The GNU General Public License does not permit incorporating your program
-into proprietary programs.  If your program is a subroutine library, you
-may consider it more useful to permit linking proprietary applications with
-the library.  If this is what you want to do, use the GNU Lesser General
-Public License instead of this License.  But first, please read
-<http://www.gnu.org/philosophy/why-not-lgpl.html>.
+##############################################################################
+##
+## Plots user supplied lat/longs on a user chosen map.
+##
+## plot-latlong reads lat/long values from stdin and writes a PNG to
+## stdout.  The input should contain one pair of lat/long values per line,
+## with the values separated by whitespace.  Blank lines and lines starting
+## with the pound character ('#') are ignored.
+##
+## Command line options are
+##
+##  -m <map-name> specifies the name of a map to use (default: the first
+##     map listed in .mapinfo: 'World'); see .mapinfo for the valid map names;
+##     see the file CONFIG for a description of the .mapinfo format
+##
+##  -s <point-size> specifies the size of the points to draw (default: 1);
+##     points are filled squares, and the size is the width in pixels
+##
+##  -c causes the pixel coordinates of each lat/long to be printed to stderr;
+##     the coordinates (0, 0) are at the upper left corner, and values increase
+##     to the right and down
+##
+##----------------------------------------------------------------------------
+##
+## The code for handling the Alber/Lambert map projection is derived from
+## GTrace v1.0.0beta (http://www.caida.org/tools/visualization/gtrace),
+## which was written by Ram Periakaruppan.  The included set of maps are also
+## derived from the GTrace distribution.  GTrace redistributed these maps
+## with the permission of VisualRoute (http://www.visualroute.com),
+## the original source of the maps.
+##
+##----------------------------------------------------------------------------
+##
+## Copyright (C) 2003 The Regents of the University of California.
+## All Rights Reserved.
+##
+## Permission to use, copy, modify and distribute any part of this
+## plot-latlong software package for educational, research and non-profit
+## purposes, without fee, and without a written agreement is hereby
+## granted, provided that the above copyright notice, this paragraph
+## and the following paragraphs appear in all copies.
+##
+## Those desiring to incorporate this into commercial products or use
+## for commercial purposes should contact the Technology Transfer
+## Office, University of California, San Diego, 9500 Gilman Drive, La
+## Jolla, CA 92093-0910, Ph: (858) 534-5815, FAX: (858) 534-7345.
+##
+## IN NO EVENT SHALL THE UNIVERSITY OF CALIFORNIA BE LIABLE TO ANY
+## PARTY FOR DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL
+## DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS
+## SOFTWARE, EVEN IF THE UNIVERSITY OF CALIFORNIA HAS BEEN ADVISED OF
+## THE POSSIBILITY OF SUCH DAMAGE.
+##
+## THE SOFTWARE PROVIDED HEREIN IS ON AN "AS IS" BASIS, AND THE
+## UNIVERSITY OF CALIFORNIA HAS NO OBLIGATION TO PROVIDE MAINTENANCE,
+## SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS. THE UNIVERSITY
+## OF CALIFORNIA MAKES NO REPRESENTATIONS AND EXTENDS NO WARRANTIES
+## OF ANY KIND, EITHER IMPLIED OR EXPRESS, INCLUDING, BUT NOT LIMITED
+## TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A
+## PARTICULAR PURPOSE, OR THAT THE USE OF THE SOFTWARE WILL NOT INFRINGE
+## ANY PATENT, TRADEMARK OR OTHER RIGHTS.
+##
+## The plot-latlong software is developed by the plot-latlong Team at the
+## University of California, San Diego under the Cooperative Association
+## for Internet Data Analysis (CAIDA) Program.  Support for this work is
+## provided by the National Communications System (NCS) via NSF grant
+## ANI-0221172, entitled "Routing and Peering Analysis for Enhancing
+## Internet Performance and Security."
+##
+##############################################################################

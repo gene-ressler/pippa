@@ -1,3 +1,4 @@
 module Pippa
-  VERSION = "0.0.2"
+  # Current version of Pippa
+  VERSION = "0.0.4"
 end

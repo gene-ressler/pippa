@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.description   = %q{Draw marks on maps by lat/lon or zip code.}
   spec.summary       = %q{Port of the plot-latlon utility from CAIDA (http://www.caida.org).}
   spec.homepage      = "http://sourceforge.net/projects/pippa"
-  spec.license       = "GPL3"
+  spec.license       = "GPLv3"
 
   spec.files         = `git ls-files`.split($/) +
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
@@ -20,5 +20,6 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake"
+  spec.add_development_dependency "rspec"
   spec.add_runtime_dependency "rmagick"
 end
