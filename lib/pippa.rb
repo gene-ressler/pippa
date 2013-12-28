@@ -1,5 +1,5 @@
 # Pippa - a Ruby gem for producing simple map graphics overlain with
-# geocoded dots of given area.
+# geocoded dots of given area. The geocoding is by lat/lon or US zipcode.
 #
 # Author::    Gene Ressler  (mailto:gene.ressler@gmail.com)
 # Copyright:: Copyright (c) 2013 Gene Ressler
@@ -241,9 +241,9 @@ module Pippa
       super
     end
 
-    # A functional test.  Write a US maps showing coordinates of all zipcodes.
-    # Plus a couple more.
-    def self.write_zipcode_maps
+    # Make a map showing all the zip codes in the USA with
+    # dots of random size. Also a couple of additional dots.
+    def self.zipcode_map
       @generator ||= Random.new
       m = Map.new('USA')
       zips.each_key.each do |zip|
@@ -253,13 +253,19 @@ module Pippa
       m.fill_opacity = 1
       m.add_at_lat_lon(41, -74, 300) # West Point, NY
       m.add_at_lat_lon(38, -122, 300) # Berkeley, CA
-      p = m.to_png
-      File.open('zipcodes.png', 'wb') { |f| f.write(p) }
+      m
+    end
+
+    # Write the test map produced by +zipcode_map+ in two different formats.
+    def self.write_zipcode_maps
+      m = zipcode_map
+      File.open('zipcodes.png', 'wb') { |f| f.write(m.to_png) }
       m.write_jpg('zipcodes.jpg')
     end
 
     private
 
+    #:nodoc:
     GRAPHIC_ATTRIBUTE_SETTERS = [:point_size=, :fill=, :stroke=, :fill_opacity=, :stroke_width=]
 
     # Build a new graphics context for rendering.
@@ -337,7 +343,11 @@ module Pippa
       end
     end
 
-    # "Zipcode","ZipCodeType","City","State","LocationType","Lat","Long","Location","Decommisioned","TaxReturnsFiled","EstimatedPopulation","TotalWages"
+    # Read CSV file of zipcode data.  Much more than we need.
+    # TODO: Develop quicker-loading version of the data file.
+    # Format:
+    #     "Zipcode","ZipCodeType","City","State","LocationType","Lat","Long",
+    #     "Location","Decommisioned","TaxReturnsFiled","EstimatedPopulation","TotalWages"
     def self.zips_from_file
       CSV::HeaderConverters[:underscore_symbol] = lambda do |s|
         t = s.gsub(/::/, '/')
