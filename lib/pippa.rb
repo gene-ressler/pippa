@@ -12,7 +12,7 @@ require 'csv'
 module Pippa
 
   # Return a list of the valid map names
-  def map_names
+  def self.map_names
     Map.info[:map].keys
   end
 
@@ -244,10 +244,10 @@ module Pippa
     # Make a map showing all the zip codes in the USA with
     # dots of random size. Also a couple of additional dots.
     def self.zipcode_map
-      @generator ||= Random.new
+      generator = Random.new(42) # Force same on every run for testing.
       m = Map.new('USA')
       zips.each_key.each do |zip|
-        m.add_at_zip(zip, @generator.rand(8) ** 2)
+        m.add_at_zip(zip, generator.rand(8) ** 2)
       end
       m.fill = 'red'
       m.fill_opacity = 1
@@ -259,8 +259,8 @@ module Pippa
     # Write the test map produced by +zipcode_map+ in two different formats.
     def self.write_zipcode_maps
       m = zipcode_map
-      File.open('zipcodes.png', 'wb') { |f| f.write(m.to_png) }
-      m.write_jpg('zipcodes.jpg')
+      File.open('spec/data/zipcodes.png', 'wb') { |f| f.write(m.to_png) }
+      m.write_jpg('spec/data/zipcodes.jpg')
     end
 
     private
