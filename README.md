@@ -33,6 +33,10 @@ Or install it yourself as:
     # Several other parameters also control dot appearance.
     map.fill = 'DarkGreen'
 
+    # Change default to enable ImageMagick anti-aliasing by refraining
+    # from snapping dot coordinates to nearest pixel.
+    map.anti_alias = true
+
     # Add a dot in the middle of the map using pixel coordinates.
     map.add_dot(map.width/2, map.height/2, 100)
 

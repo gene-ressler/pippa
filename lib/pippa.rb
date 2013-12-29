@@ -61,6 +61,21 @@ module Pippa
     # RMagick image for direct manipulation, e.g. labeling
     attr_reader :image
 
+    # Render if we're making a change and then set a flag indicating
+    # whether anti-aliasing will be performed in next render.
+    # Default is false.
+    def anti_alias=(val)
+      val = !!val
+      return val if val == @anti_alias
+      render
+      @anti_alias = val
+    end
+
+    # Return flag indicating whether anti-aliasing will be performed in next render.
+    def anti_alias?
+      @anti_alias
+    end
+
     # Return global map and projection information from config file.
     # See +maps/_info+ for format. For extending functionality.
     def self.info
@@ -77,6 +92,7 @@ module Pippa
       @stroke = 'gray25'
       @fill_opacity = 0.85
       @stroke_width = 1
+      @anti_alias = false
       @dots = []
 
       # Look up global info or return if none.
@@ -107,6 +123,24 @@ module Pippa
       @dots << [x, y, area]
     end
 
+    # Return the pixel-xy coordinate on this map of a given latitude and longitude.
+    #
+    # ==== Attributes
+    #
+    # * +lat+ - Given latitude
+    # * +lon+ - Given longitude
+    #
+    # ==== Examples
+    #
+    # Get the pixel coordinate of West Point, NY.
+    #
+    # map = Map.new('USA')
+    # x, y = map.lat_lon_to_xy(41, -74)
+    def lat_lon_to_xy(lat, lon)
+      set_projection unless @lat_lon_to_xy
+      @lat_lon_to_xy.call(lat, lon)
+    end
+
     # Add a dot on the map at given latitude and longitude with given area.
     #
     # ==== Attributes
@@ -123,8 +157,7 @@ module Pippa
     # map.add_at_lat_lon(41, -74, 100)
     # map.write_png('map.png')
     def add_at_lat_lon(lat, lon, area = 0)
-      set_projection unless @lat_lon_to_xy
-      add_dot(*@lat_lon_to_xy.call(lat, lon), area)
+      add_dot(*lat_lon_to_xy(lat, lon), area)
     end
 
     # Add a dot on the map at given 5-digit zip code.
@@ -176,15 +209,30 @@ module Pippa
       return if @image.nil? || @dots.empty?
       @dots.sort! {|a, b| b[2] <=> a[2] } # by area, smallest last
       gc = new_gc
-      @dots.each do |x, y, area|
-        side = dot_side(area)
-        if side <= 1
-          gc.point(x, y)
-        else
-          h = (0.5 * side).round
-          x1 = x - h
-          y1 = y - h
-          gc.rectangle(x1, y1, x1 + side, y1 + side)
+      if @anti_alias
+        @dots.each do |x, y, area|
+          side = @point_size * Math.sqrt(area)
+          if side <= 1
+            gc.point(x, y)
+          else
+            h = 0.5 * side
+            x1 = x - h
+            y1 = y - h
+            gc.rectangle(x1, y1, x1 + side, y1 + side)
+          end
+        end
+      else
+        @dots.each do |x, y, area|
+          side = @point_size * Math.sqrt(area)
+          x, y, side = x.round, y.round, side.round
+          if side <= 1
+            gc.point(x, y)
+          else
+            h = side / 2
+            x1 = x - h
+            y1 = y - h
+            gc.rectangle(x1, y1, x1 + side, y1 + side)
+          end
         end
       end
       gc.draw(@image)
@@ -217,8 +265,11 @@ module Pippa
 
       # Handle graphic attribute setters. flushing with render first.
       if GRAPHIC_ATTRIBUTE_SETTERS.include?(sym)
+        iv_name = "@#{sym.to_s[0..-2]}"
+        old_val = instance_variable_get(iv_name)
+        return old_val if args[0] == old_val
         render
-        return instance_variable_set("@#{sym.to_s[0..-2]}", args[0])
+        return instance_variable_set(iv_name, args[0])
       end
 
       # Handle to_??? format converters, again flushing with render.
@@ -247,7 +298,7 @@ module Pippa
       generator = Random.new(42) # Force same on every run for testing.
       m = Map.new('USA')
       zips.each_key.each do |zip|
-        m.add_at_zip(zip, generator.rand(8) ** 2)
+        m.add_at_zip(zip, generator.rand(4) ** 2)
       end
       m.fill = 'red'
       m.fill_opacity = 1
@@ -310,11 +361,6 @@ module Pippa
           [(lon - top_lon) * lon_scale, (top_lat - lat) * lat_scale]
         end
       end
-    end
-
-    # Return the integer size of the side of a dot of given area.
-    def dot_side(area)
-      (@point_size * Math.sqrt(area)).round
     end
 
     # For given string +prefix+ and a symbol like +:<prefix>_png+ or +:<prefix>_jpg+,
