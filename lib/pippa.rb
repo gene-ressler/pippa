@@ -242,7 +242,7 @@ module Pippa
     # Return true iff we respond to given method. Takes care of to_???
     # and write_???? converters and writers of graphic formats.
     def respond_to? (sym, include_private = false)
-      conversion_to_format('to', sym) || conversion_to_format('write', sym) ? true : super
+      conversion_to_format(sym) || writer_to_format(sym) ? true : super
     end
 
     # Implement to_??? methods where ??? is any valid Magick image
@@ -273,7 +273,7 @@ module Pippa
       end
 
       # Handle to_??? format converters, again flushing with render.
-      fmt = conversion_to_format('to', sym)
+      fmt = conversion_to_format(sym)
       if fmt
         render
         @image.format = fmt
@@ -281,7 +281,7 @@ module Pippa
       end
 
       # Handle write_??? file writers, again flushing with render
-      fmt = conversion_to_format('write', sym)
+      fmt = writer_to_format(sym)
       if fmt
         render
         @image.format = fmt
@@ -312,6 +312,17 @@ module Pippa
       m = zipcode_map
       File.open('spec/data/zipcodes.png', 'wb') { |f| f.write(m.to_png) }
       m.write_jpg('spec/data/zipcodes.jpg')
+    end
+
+    # Run the profiler and record results.
+    def self.profile
+      require 'ruby-prof'
+      RubyProf.start
+      write_zipcode_maps
+      result = RubyProf.stop
+      File.open('profile.htm', 'w') do |f|
+        RubyProf::GraphHtmlPrinter.new(result).print(f)
+      end
     end
 
     private
@@ -365,12 +376,22 @@ module Pippa
 
     # For given string +prefix+ and a symbol like +:<prefix>_png+ or +:<prefix>_jpg+,
     # return 'PNG' or 'JPG' so long as the part of the symbol after the underscore
-    # is a valid Magick image format.  Otherwise return +nil+.
-    def conversion_to_format(prefix, sym)
+    # is a valid Magick image format with required function. Otherwise return +nil+.
+    def method_to_format(prefix, sym, function)
       return nil unless sym.to_s =~ /^#{prefix}_(.*)$/
       format_name = $1.upcase
       return nil unless format = Magick.formats[format_name]
-      format.include?('*') && format_name
+      format.include?(function) && format_name
+    end
+
+    # Translate to_xxx to XXX if XXX is a valid Magick image format with blob function.
+    def conversion_to_format(sym)
+      method_to_format('to', sym, '*')
+    end
+
+    # Translate write_xxx to XXX if XXX is a valid Magick image format with write function.
+    def writer_to_format(sym)
+      method_to_format('write', sym, 'w')
     end
 
     # Format:

@@ -5,6 +5,7 @@
 .yardoc
 .idea/
 .DS_Store
+profile.*
 Gemfile.lock
 InstalledFiles
 _yardoc
