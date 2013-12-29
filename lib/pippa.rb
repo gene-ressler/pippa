@@ -11,7 +11,7 @@ require 'csv'
 
 module Pippa
 
-  # Return a list of the valid map names
+  # Return a list of the valid map names.
   def self.map_names
     Map.info[:map].keys
   end
@@ -28,7 +28,8 @@ module Pippa
     # Height of the map image in pixels
     attr_reader :height
 
-    # Base size of dot edges in pixels; defaults to 1
+    # Base size of dot edges in pixels; defaults to 1.
+    # Therefore a unit area is one pixel.
     attr_reader :point_size
 
     ##
@@ -58,13 +59,13 @@ module Pippa
     ##
     # :attr_writer: stroke_width
 
-    # RMagick image for direct manipulation, e.g. labeling
+    # RMagick image for direct manipulation, for example drawing lines and labels
     attr_reader :image
 
     # Render if we're making a change and then set a flag indicating
     # whether anti-aliasing will be performed in next render.
     # Default is false.
-    def anti_alias=(val)
+    def anti_alias=(val) # :nodoc:
       val = !!val
       return val if val == @anti_alias
       render
@@ -72,18 +73,18 @@ module Pippa
     end
 
     # Return flag indicating whether anti-aliasing will be performed in next render.
-    def anti_alias?
+    def anti_alias? # :nodoc:
       @anti_alias
     end
 
     # Return global map and projection information from config file.
-    # See +maps/_info+ for format. For extending functionality.
-    def self.info
+    # See +maps/_info+ for format. This is not generally very useful.
+    def self.info # :nodoc:
       @@info ||= info_from_file
     end
 
-    # Make a new map with given name.  Default is World.
-    # See +maps/_info+ or call +Pippa.map_names+ for all possible.
+    # Make a new map with given name.
+    # See the file +maps/_info+ or call Pippa#map_names for all possible.
     def initialize(name = 'World')
 
       # Set up drawing standards.
@@ -116,9 +117,9 @@ module Pippa
     #
     # Make a map and put a dot in the middle.
     #
-    # map = Map.new('USA')
-    # map.add_dot(map.width/2, map.height/2, 100)
-    # map.write_png('map.png')
+    #    map = Map.new('USA')
+    #    map.add_dot(map.width/2, map.height/2, 100)
+    #    map.write_png('map.png')
     def add_dot(x, y, area = 0)
       @dots << [x, y, area]
     end
@@ -134,8 +135,8 @@ module Pippa
     #
     # Get the pixel coordinate of West Point, NY.
     #
-    # map = Map.new('USA')
-    # x, y = map.lat_lon_to_xy(41, -74)
+    #    map = Map.new('USA')
+    #    x, y = map.lat_lon_to_xy(41, -74)
     def lat_lon_to_xy(lat, lon)
       set_projection unless @lat_lon_to_xy
       @lat_lon_to_xy.call(lat, lon)
@@ -153,9 +154,9 @@ module Pippa
     #
     # Make a map and put a dot at West Point, NY.
     #
-    # map = Map.new('USA')
-    # map.add_at_lat_lon(41, -74, 100)
-    # map.write_png('map.png')
+    #    map = Map.new('USA')
+    #    map.add_at_lat_lon(41, -74, 100)
+    #    map.write_png('map.png')
     def add_at_lat_lon(lat, lon, area = 0)
       add_dot(*lat_lon_to_xy(lat, lon), area)
     end
@@ -182,7 +183,7 @@ module Pippa
     # Return a hash mapping zip codes to CSV records of zip code data.
     # NB: The file is big, so this takes a while to return the first time called.
     #
-    # CSV::Row struct format (see also http://ruby-doc.org/stdlib-1.9.2/libdoc/csv/rdoc/CSV/Row.html:
+    # +CSV::Row+ struct format (see also http://ruby-doc.org/stdlib-1.9.2/libdoc/csv/rdoc/CSV/Row.html):
     #
     #     #<CSV::Row
     #       zipcode:"97475"
@@ -198,7 +199,7 @@ module Pippa
     #       estimated_population:nil
     #       total_wages:nil>
     #
-    # See http://federalgovernmentzipcodes.us for more information.
+    # See http://federalgovernmentzipcodes.us for more information on the zipcode data.
     def self.zips
       @@zips ||= zips_from_file
     end
@@ -239,29 +240,30 @@ module Pippa
       @dots = []
     end
 
+
     # Return true iff we respond to given method. Takes care of to_???
     # and write_???? converters and writers of graphic formats.
     def respond_to? (sym, include_private = false)
       conversion_to_format(sym) || writer_to_format(sym) ? true : super
     end
 
-    # Implement to_??? methods where ??? is any valid Magick image
-    # format that supports blob operations. Renders dots not already rendered.
+    ##
+    # :method: write_xxx
+    # Write map as graphic file in Magick format xxx.
+    # File suffix is *not* added automatically.
+    # Get a full list of formats with this:
+    #    Magick.formats.each {|k,v| puts k if v.include?('w') }
+    # :call-seq:
+    #   write_xxx(filename)
 
     ##
     # :method: to_xxx
     # Return map as a blob with Magick format +xxx+.
-    # Get a full list of formats with
+    # Get a full list of formats with this:
     #    Magick.formats.each {|k,v| puts k if v.include?('*') }
 
-    ##
-    # :method: write_xxx(filename)
-    # Write map as graphic file in Magick format xxx.
-    # File suffix is *not* added automatically.
-    # Get a full list of formats with
-    #    Magick.formats.each {|k,v| puts k if v.include?('*') }
-
-    def method_missing(sym, *args, &block)
+    # Handle special cases of missing converters, writers, and flushing attribute setters.
+    def method_missing(sym, *args, &block) # :nodoc:
 
       # Handle graphic attribute setters. flushing with render first.
       if GRAPHIC_ATTRIBUTE_SETTERS.include?(sym)
@@ -307,7 +309,7 @@ module Pippa
       m
     end
 
-    # Write the test map produced by +zipcode_map+ in two different formats.
+    # Write the test map produced by +zipcode_map+ as png and jpg files.
     def self.write_zipcode_maps
       m = zipcode_map
       File.open('spec/data/zipcodes.png', 'wb') { |f| f.write(m.to_png) }
