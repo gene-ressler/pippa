@@ -1,5 +1,7 @@
 # Pippa
 
+[![Gem Version](https://badge.fury.io/rb/pippa.png)](http://badge.fury.io/rb/pippa)
+
 Pippa - a Ruby gem for producing simple map graphics overlain with
 geocoded dots of given area. Dot coordinates are in screen pixels,
 latitude/longitude, or US zipcode.

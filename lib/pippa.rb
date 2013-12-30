@@ -9,11 +9,59 @@ require 'pippa/version'
 require 'RMagick'
 require 'csv'
 
+# The Pippa API.
 module Pippa
 
   # Return a list of the valid map names.
   def self.map_names
     Map.info[:map].keys
+  end
+
+  # Compress the zipcode CSV file to something that loads quicker.
+  #
+  # This gem is packaged with compressed zipcode table that only works
+  # if your ruby has compatible a +Marshal+ version. If loading fails,
+  # it will attempt to rewrite the table in a compatible format, but if
+  # you don't have write permission in the gem store, that will
+  # consistently fail. You can use this call with +sudo∂ irb+ to
+  # write a compatible table.
+  def self.compress_zipcodes
+    dump_zips.size
+  end
+
+  # Return a hash mapping zip codes to CSV records of zip code data.
+  # NB: The file is big, so this takes a while to return the first time called.
+  #
+  # +CSV::Row+ struct format (see also http://ruby-doc.org/stdlib-1.9.2/libdoc/csv/rdoc/CSV/Row.html):
+  #
+  #     #<CSV::Row
+  #       zipcode:"97475"
+  #       zip_code_type:"PO BOX"
+  #       city:"SPRINGFIELD"
+  #       state:"OR"
+  #       location_type:"PRIMARY"
+  #       lat:44.05
+  #       long:-123.02
+  #       location:"NA-US-OR-SPRINGFIELD"
+  #       decommisioned:"false"
+  #       tax_returns_filed:nil
+  #       estimated_population:nil
+  #       total_wages:nil>
+  #
+  # See http://federalgovernmentzipcodes.us for more information on the zipcode data.
+  def self.zips
+    @@zips ||= zips_from_file
+  end
+
+  # Run the profiler and record results. (For development.)
+  def self.profile
+    require 'ruby-prof'
+    RubyProf.start
+    Map.write_zipcode_maps
+    result = RubyProf.stop
+    File.open('profile.htm', 'w') do |f|
+      RubyProf::GraphHtmlPrinter.new(result).print(f)
+    end
   end
 
   # An image-based map class that can be overlain with dots
@@ -160,6 +208,7 @@ module Pippa
     def add_at_lat_lon(lat, lon, area = 0)
       add_dot(*lat_lon_to_xy(lat, lon), area)
     end
+    alias_method :add_dot_at_lat_lon, :add_at_lat_lon
 
     # Add a dot on the map at given 5-digit zip code.
     #
@@ -176,33 +225,10 @@ module Pippa
     #    map.add_at_zip('10996', 100)
     #    map.write_png('map.png')
     def add_at_zip(zip, area = 0)
-      data = Map.zips[zip]
-      add_at_lat_lon(data[:lat], data[:long], area) if data
+      data = Pippa.zips[zip]
+      add_at_lat_lon(data[:lat], data[:lon], area) if data
     end
-
-    # Return a hash mapping zip codes to CSV records of zip code data.
-    # NB: The file is big, so this takes a while to return the first time called.
-    #
-    # +CSV::Row+ struct format (see also http://ruby-doc.org/stdlib-1.9.2/libdoc/csv/rdoc/CSV/Row.html):
-    #
-    #     #<CSV::Row
-    #       zipcode:"97475"
-    #       zip_code_type:"PO BOX"
-    #       city:"SPRINGFIELD"
-    #       state:"OR"
-    #       location_type:"PRIMARY"
-    #       lat:44.05
-    #       long:-123.02
-    #       location:"NA-US-OR-SPRINGFIELD"
-    #       decommisioned:"false"
-    #       tax_returns_filed:nil
-    #       estimated_population:nil
-    #       total_wages:nil>
-    #
-    # See http://federalgovernmentzipcodes.us for more information on the zipcode data.
-    def self.zips
-      @@zips ||= zips_from_file
-    end
+    alias_method :add_dot_at_zip, :add_at_zip
 
     # Force rendering of all dots added so far onto the map.
     # Then forget them so they're never rendered again.
@@ -299,7 +325,7 @@ module Pippa
     def self.zipcode_map
       generator = Random.new(42) # Force same on every run for testing.
       m = Map.new('USA')
-      zips.each_key.each do |zip|
+      Pippa.zips.each_key.each do |zip|
         m.add_at_zip(zip, generator.rand(4) ** 2)
       end
       m.fill = 'red'
@@ -314,17 +340,6 @@ module Pippa
       m = zipcode_map
       File.open('spec/data/zipcodes.png', 'wb') { |f| f.write(m.to_png) }
       m.write_jpg('spec/data/zipcodes.jpg')
-    end
-
-    # Run the profiler and record results.
-    def self.profile
-      require 'ruby-prof'
-      RubyProf.start
-      write_zipcode_maps
-      result = RubyProf.stop
-      File.open('profile.htm', 'w') do |f|
-        RubyProf::GraphHtmlPrinter.new(result).print(f)
-      end
     end
 
     private
@@ -411,36 +426,65 @@ module Pippa
         data
       end
     end
+  end
 
-    # Read CSV file of zipcode data.  Much more than we need.
-    # TODO: Develop quicker-loading version of the data file.
-    # Format:
-    #     "Zipcode","ZipCodeType","City","State","LocationType","Lat","Long",
-    #     "Location","Decommisioned","TaxReturnsFiled","EstimatedPopulation","TotalWages"
-    def self.zips_from_file
-      CSV::HeaderConverters[:underscore_symbol] = lambda do |s|
-        t = s.gsub(/::/, '/')
-        t.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
-        t.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
-        t.tr!("-", "_")
-        t.downcase!
-        t.to_sym
-      end
-      CSV::Converters[:custom] = lambda do |s, info|
-        begin
-          [:lat, :long].include?(info.header) ? Float(s) : s
-        rescue
-          s
-        end
-      end
-      zips = {}
-      CSV.foreach("#{File.dirname(__FILE__)}/pippa/maps/_zipcodes.csv",
-                  :headers => :first_row,
-                  :header_converters => :underscore_symbol,
-                  :converters => :custom) do |row|
-        zips[row[:zipcode]] = row if row[:lat] && row[:long]
-      end
-      zips
+  private
+
+  ZIPCODE_CSV_FILE_PATH = "#{File.dirname(__FILE__)}/pippa/maps/_zipcodes.csv" # :nodoc:
+
+  # Read zipcode data from unaltered CSV file.
+  def self.zips_from_csv
+    CSV::HeaderConverters[:underscore_symbol] = lambda do |s|
+      t = s.gsub(/::/, '/')
+      t.gsub!(/([A-Z]+)([A-Z][a-z])/,'\1_\2')
+      t.gsub!(/([a-z\d])([A-Z])/,'\1_\2')
+      t.tr!("-", "_")
+      t.downcase!
+      t.to_sym
     end
+    CSV::Converters[:custom] = lambda do |s, info|
+      begin
+        [:lat, :long].include?(info.header) ? Float(s) : s
+      rescue
+        s
+      end
+    end
+    zips = {}
+    CSV.foreach(ZIPCODE_CSV_FILE_PATH,
+                :headers => :first_row,
+                :header_converters => :underscore_symbol,
+                :converters => :custom) do |row|
+      zips[row[:zipcode]] = row if row[:lat] && row[:long]
+    end
+    zips
+  end
+
+  ZIPCODE_DUMP_FILE_PATH = "#{File.dirname(__FILE__)}/pippa/maps/_zipcodes.dmp" # :nodoc:
+
+  # Use native Ruby facility to create a quick-loading, compatible version of CSV zipcode data.
+  def self.dump_zips
+    hash = {}
+    zips_from_csv.each do |zip, row|
+      hash[zip] = { :lat => row[:lat], :lon => row[:long] }
+    end
+    File.open(ZIPCODE_DUMP_FILE_PATH, 'wb') {|f| Marshal.dump(hash, f) }
+    hash
+  rescue
+    hash
+  end
+
+  # Read a previously created dump of the zipcode database.
+  def self.zips_from_dump
+    File.open(ZIPCODE_DUMP_FILE_PATH, 'rb') {|f| Marshal.load(f) }
+  end
+
+  # Read zipcode data. Tries compressed form first and then CSV.
+  # Format:
+  #     "Zipcode","ZipCodeType","City","State","LocationType","Lat","Long",
+  #     "Location","Decommisioned","TaxReturnsFiled","EstimatedPopulation","TotalWages"
+  def self.zips_from_file
+    zips_from_dump
+  rescue
+    dump_zips
   end
 end

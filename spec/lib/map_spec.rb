@@ -1,5 +1,6 @@
 require 'spec_helper'
 
+# Test functions of the Pippa::Map API lightly.  Much more possible here.
 describe Pippa::Map do
 
   let(:map) { Pippa::Map.zipcode_map }
@@ -17,10 +18,6 @@ describe Pippa::Map do
     i.size.should == 2
     i[:map].size.should == 30
     i[:projection].size.should == 4
-  end
-
-  it 'should have right number of zipcodes' do
-    Pippa::Map.zips.size.should == 41874
   end
 
   # Here I'm assuming timestamp metadata chunk always has same size.

@@ -8,14 +8,21 @@ Gem::Specification.new do |spec|
   spec.version       = Pippa::VERSION
   spec.authors       = ["Gene Ressler"]
   spec.email         = ["gene.ressler@gmail.com"]
-  spec.description   = %q{Draw dots on maps by lat/lon or zip code.}
-  spec.summary       = %q{Port of the plot-latlon utility from CAIDA (http://www.caida.org).}
-  spec.homepage      = "https://github.com/gene-ressler/pippa/wiki"
-  spec.license       = "GPLv3"
 
-  spec.files         = `git ls-files`.split($/) +
-  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.summary       = %q{Reimplements some parts of the plot-latlon utility from CAIDA (http://www.caida.org).}
+  spec.description   =
+%q{Draw dots on maps by lat/lon or zip code. Includes a library of 30 map backgrounds,
+and associated geocoding configuration data, and a table of US zip codes with their
+approximate centroids as latitude and longitude. Exposes the ImageMagick image and
+coordinate conversions so that overlaying labels, lines, and other features on dots
+is possible. Renders as a blob suitable for e.g. Rails send_data as an img tag src
+and writes files in any supported ImageMagick graphic format.}
+
+  spec.homepage      = "https://github.com/gene-ressler/pippa/wiki"
+  spec.licenses      = ["GPL-3.0", "RUC"]
+
+  spec.files         = `git ls-files`.split($/)
+  spec.test_files    = spec.files.grep(%r{^spec/})
   spec.require_paths = ["lib"]
 
   # Make work on earlier versions, but this is where testing has been performed.
