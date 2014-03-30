@@ -25,7 +25,7 @@ and writes files in any supported ImageMagick graphic format.}
   spec.test_files    = spec.files.grep(%r{^spec/})
   spec.require_paths = ["lib"]
 
-  # Make work on earlier versions, but this is where testing has been performed.
+  # May work on earlier versions, but this is where testing has been performed.
   spec.add_development_dependency "bundler", "~> 1.3"
   spec.add_development_dependency "rake", "~> 10.1"
   spec.add_development_dependency "rspec", "~> 2.14"

@@ -70,6 +70,12 @@ module Pippa
   class Map
     include Magick
 
+    # Dot shape. Either :square (default) or :circle
+    attr_accessor :dot_kind
+
+    # Boolean saying whether to merge markers to eliminate overlaps during rendering.
+    attr_accessor :merge
+
     # Width of the map image in pixels
     attr_reader :width
 
@@ -112,7 +118,8 @@ module Pippa
 
     # Render if we're making a change and then set a flag indicating
     # whether anti-aliasing will be performed in next render.
-    # Default is false.
+    # Default is false.  We don't handle this in method_missing because
+    # we need to detect boolean equivalence, not equality.
     def anti_alias=(val) # :nodoc:
       val = !!val
       return val if val == @anti_alias
@@ -142,6 +149,8 @@ module Pippa
       @fill_opacity = 0.85
       @stroke_width = 1
       @anti_alias = false
+      @dot_kind = :square
+      @merge = false
       @dots = []
 
       # Look up global info or return if none.
@@ -230,42 +239,47 @@ module Pippa
     end
     alias_method :add_dot_at_zip, :add_at_zip
 
+    TWO_SQRT_1_PI = 2 * Math.sqrt(1 / Math::PI)
+
+    def merged_dots
+      require 'lulu'
+      list = Lulu::MarkerList.new
+      list.set_info(@dot_kind, @point_size)
+      @dots.each {|dot| list.add(*dot) }
+      list.merge
+      list.markers
+    end
+
     # Force rendering of all dots added so far onto the map.
     # Then forget them so they're never rendered again.
     def render
       return if @image.nil? || @dots.empty?
-      @dots.sort! {|a, b| b[2] <=> a[2] } # by area, smallest last
-      gc = new_gc
-      if @anti_alias
-        @dots.each do |x, y, area|
-          side = @point_size * Math.sqrt(area)
-          if side <= 1
-            gc.point(x, y)
-          else
-            h = 0.5 * side
-            x1 = x - h
-            y1 = y - h
-            gc.rectangle(x1, y1, x1 + side, y1 + side)
-          end
-        end
+      if @merge
+        @dots = merged_dots
       else
-        @dots.each do |x, y, area|
-          side = @point_size * Math.sqrt(area)
-          x, y, side = x.round, y.round, side.round
-          if side <= 1
-            gc.point(x, y)
+        @dots.sort! {|a, b| b[2] <=> a[2] } # by area, smallest last
+      end
+      gc = new_gc
+      @dots.each do |x, y, area|
+        diam = @point_size * Math.sqrt(area)
+        diam *= TWO_SQRT_1_PI if @dot_kind == :circle
+        x, y, diam = x.round, y.round, diam.round unless @anti_alias
+        if diam <= 1
+          gc.point(x, y)
+        else
+          if @dot_kind == :circle
+            gc.circle(x, y, x + diam / 2, y)
           else
-            h = side / 2
+            h = diam / 2
             x1 = x - h
             y1 = y - h
-            gc.rectangle(x1, y1, x1 + side, y1 + side)
+            gc.rectangle(x1, y1, x1 + diam, y1 + diam)
           end
         end
       end
       gc.draw(@image)
       @dots = []
     end
-
 
     # Return true iff we respond to given method. Takes care of to_???
     # and write_???? converters and writers of graphic formats.
@@ -321,12 +335,15 @@ module Pippa
     end
 
     # Make a map showing all the zip codes in the USA with
-    # dots of random size. Also a couple of additional dots.
+    # dots of fixed area. Also a couple of additional dots.
     def self.zipcode_map
       generator = Random.new(42) # Force same on every run for testing.
       m = Map.new('USA')
+      m.point_size = 1.5
+      m.dot_kind = :circle
+      m.merge = true
       Pippa.zips.each_key.each do |zip|
-        m.add_at_zip(zip, generator.rand(4) ** 2)
+        m.add_at_zip(zip, 1)
       end
       m.fill = 'red'
       m.fill_opacity = 1
@@ -354,6 +371,7 @@ module Pippa
       gc.stroke(@stroke)
       gc.fill_opacity(@fill_opacity)
       gc.stroke_width(@stroke_width)
+      gc.stroke_antialias(@anti_alias)
       gc
     end
 
