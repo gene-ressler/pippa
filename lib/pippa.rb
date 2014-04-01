@@ -336,11 +336,11 @@ module Pippa
 
     # Make a map showing all the zip codes in the USA with
     # dots of fixed area. Also a couple of additional dots.
-    def self.zipcode_map
+    def self.zipcode_map(dot_kind = :circle)
       generator = Random.new(42) # Force same on every run for testing.
       m = Map.new('USA')
       m.point_size = 1.5
-      m.dot_kind = :circle
+      m.dot_kind = dot_kind
       m.merge = true
       Pippa.zips.each_key.each do |zip|
         m.add_at_zip(zip, 1)
@@ -353,8 +353,8 @@ module Pippa
     end
 
     # Write the test map produced by +zipcode_map+ as png and jpg files.
-    def self.write_zipcode_maps
-      m = zipcode_map
+    def self.write_zipcode_maps(dot_kind = :circle)
+      m = zipcode_map(dot_kind)
       File.open('spec/data/zipcodes.png', 'wb') { |f| f.write(m.to_png) }
       m.write_jpg('spec/data/zipcodes.jpg')
     end

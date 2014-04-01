@@ -39,6 +39,13 @@ Or install it yourself as:
     # from snapping dot coordinates to nearest pixel.
     map.anti_alias = true
 
+    # Remove overlaps of markers by repeated merging of the pair with
+    # greatest overlap, creating a new marker with area the sum of the
+    # merged ones. Merging occurs just before the accumulated markers
+    # are rendered. Uses a fast algorithm so that 10,000s of markers
+    # can be handled in a fraction of a second. Default is no merge.
+    map.merge = true
+
     # Add a dot in the middle of the map using pixel coordinates.
     map.add_dot(map.width/2, map.height/2, 100)
 
