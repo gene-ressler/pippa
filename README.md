@@ -11,6 +11,7 @@ latitude/longitude, or US zipcode.
 Add this line to your application's Gemfile:
 
     gem 'pippa'
+    gem 'lulu'  # If you'd like to use the marker merge function
 
 And then execute:
 
@@ -19,6 +20,7 @@ And then execute:
 Or install it yourself as:
 
     $ gem install pippa
+    $ gem install lulu  # Again optional if you wish to merge
 
 ## Usage
 
@@ -44,6 +46,7 @@ Or install it yourself as:
     # merged ones. Merging occurs just before the accumulated markers
     # are rendered. Uses a fast algorithm so that 10,000s of markers
     # can be handled in a fraction of a second. Default is no merge.
+    # Requires the **lulu** gem, which is not an automatic dependency.
     map.merge = true
 
     # Add a dot in the middle of the map using pixel coordinates.
